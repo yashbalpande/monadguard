@@ -1,13 +1,37 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { GuardProvider } from "@/contexts/GuardContext";
+import HeroSection from "@/components/HeroSection";
+import ProblemSection from "@/components/ProblemSection";
+import SolutionSection from "@/components/SolutionSection";
+import RuleSetup from "@/components/RuleSetup";
+import MonitoringDashboard from "@/components/MonitoringDashboard";
+import EmergencyAlert from "@/components/EmergencyAlert";
+import IncidentTimeline from "@/components/IncidentTimeline";
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <GuardProvider>
+      <div className="h-screen overflow-y-auto snap-y snap-mandatory">
+        <div className="snap-start">
+          <HeroSection />
+        </div>
+        <div className="snap-start">
+          <ProblemSection />
+        </div>
+        <div className="snap-start">
+          <SolutionSection />
+        </div>
+        <div className="snap-start">
+          <RuleSetup />
+        </div>
+        <div className="snap-start">
+          <MonitoringDashboard />
+        </div>
+        <div className="snap-start">
+          <IncidentTimeline />
+        </div>
       </div>
-    </div>
+      <EmergencyAlert />
+    </GuardProvider>
   );
 };
 
