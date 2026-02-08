@@ -94,3 +94,49 @@ The system detects when you visit suspicious websites trying to steal your crypt
 
 See [SCAM_DETECTION_GUIDE.md](SCAM_DETECTION_GUIDE.md) for detailed examples and how to test it.
 
+## Smart Contracts
+
+Monad Guard includes on-chain smart contracts for advanced wallet security features:
+
+### Three Core Contracts
+
+1. **EmergencyGuard** - Freeze your account instantly in case of compromise
+   - Activate emergency mode to restrict all transactions
+   - Add trusted guardians to help manage your account
+   - Full control stays with you
+
+2. **ApprovalManager** - Track and manage token approvals on-chain
+   - See all active token approvals with spending limits
+   - Identify unlimited approvals (high risk)
+   - Revoke approvals directly from the contract
+   - Full approval history stored on-chain
+
+3. **TransactionValidator** - Analyze transactions with on-chain risk scoring
+   - Validate transactions before they're sent
+   - Risk scoring based on target, value, and function signature
+   - Maintain validation history on-chain
+   - Suspend suspicious addresses
+
+### Deploying Contracts
+
+All contracts are configured for **Monad Testnet** (Chain ID: 10143).
+
+**Quick Start:**
+
+1. Get testnet MON tokens: https://faucet.monad.xyz
+2. Configure `.env` with your private key
+3. Deploy: `npx hardhat run scripts/deploy.ts --network monad_testnet`
+
+For detailed deployment instructions, see [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md).
+
+### Contract Addresses
+
+After deployment, add contract addresses to your `.env`:
+
+```env
+VITE_EMERGENCY_GUARD_ADDRESS=0x...
+VITE_APPROVAL_MANAGER_ADDRESS=0x...
+VITE_TRANSACTION_VALIDATOR_ADDRESS=0x...
+```
+
+The frontend automatically integrates with deployed contracts via Wagmi hooks.
