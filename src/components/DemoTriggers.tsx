@@ -7,14 +7,20 @@ import { Badge } from "@/components/ui/badge";
 
 interface RuleSetupProps {
   onSimulateSign: () => void;
+  onSimulateSignThisSite: () => void;
+  onSimulateSafeSign: () => void;
   onSimulateApproval: () => void;
   onOpenCodeScanner: () => void;
+  onSimulateScamCode?: () => void;
 }
 
 export default function DemoTriggers({
   onSimulateSign,
+  onSimulateSignThisSite,
+  onSimulateSafeSign,
   onSimulateApproval,
   onOpenCodeScanner,
+  onSimulateScamCode,
 }: RuleSetupProps) {
   const [activeTab, setActiveTab] = useState<
     "signing" | "approval" | "code" | null
@@ -67,17 +73,41 @@ export default function DemoTriggers({
                 <p>Flags suspicious keywords</p>
               </div>
 
-              <Button
-                onClick={() => {
-                  setActiveTab("signing");
-                  onSimulateSign();
-                }}
-                className="w-full"
-                variant="outline"
-                size="sm"
-              >
-                Simulate Signature Request
-              </Button>
+              <div className="space-y-2">
+                <Button
+                  onClick={() => {
+                    setActiveTab("signing");
+                    onSimulateSign();
+                  }}
+                  className="w-full"
+                  variant="outline"
+                  size="sm"
+                >
+                  Risky (phishing domain)
+                </Button>
+                <Button
+                  onClick={() => {
+                    setActiveTab("signing");
+                    onSimulateSignThisSite();
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-muted-foreground"
+                >
+                  Sign from this site
+                </Button>
+                <Button
+                  onClick={() => {
+                    setActiveTab("signing");
+                    onSimulateSafeSign();
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-muted-foreground"
+                >
+                  Safe (trusted + nonce)
+                </Button>
+              </div>
             </Card>
           </motion.div>
 
@@ -151,14 +181,21 @@ export default function DemoTriggers({
                 <p>Rates contracts by risk level</p>
               </div>
 
-              <Button
-                onClick={onOpenCodeScanner}
-                className="w-full"
-                variant="outline"
-                size="sm"
-              >
-                Open Code Scanner
-              </Button>
+              <div className="space-y-2">
+                <Button onClick={onOpenCodeScanner} className="w-full" variant="outline" size="sm">
+                  Open Code Scanner
+                </Button>
+                {onSimulateScamCode && (
+                  <Button
+                    onClick={onSimulateScamCode}
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-destructive/80"
+                  >
+                    Simulate scam contract
+                  </Button>
+                )}
+              </div>
             </Card>
           </motion.div>
         </div>

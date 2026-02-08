@@ -1,12 +1,13 @@
 import { motion } from "framer-motion";
 import { Shield, ChevronDown, AlertCircle } from "lucide-react";
 import { useGuard } from "@/contexts/GuardContext";
-import { useAccount } from "wagmi";
+import { useAccount, useSwitchChain } from "wagmi";
 import { MONAD_CHAIN_ID } from "@/lib/chains";
 
 export default function HeroSection() {
-  const { wallet, connectWallet, isMonitoring } = useGuard();
+  const { wallet, connectWallet, isMonitoring, toggleMonitoring } = useGuard();
   const { chain } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
   const isWrongNetwork = wallet.connected && chain?.id !== MONAD_CHAIN_ID;
 
   return (
@@ -58,17 +59,24 @@ export default function HeroSection() {
           You decide what to do next.
         </motion.p>
 
-        {/* Network Warning */}
+        {/* Network Warning + Switch */}
         {isWrongNetwork && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/30 flex items-center gap-2 max-w-2xl"
+            className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/30 flex flex-col sm:flex-row items-center gap-3 max-w-2xl"
           >
             <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0" />
-            <p className="text-sm text-destructive">
-              Wrong network detected. Please switch to Monad Testnet (Chain ID: {MONAD_CHAIN_ID})
+            <p className="text-sm text-destructive flex-1">
+              Wrong network. Switch to Monad Testnet to use Guard.
             </p>
+            <button
+              type="button"
+              onClick={() => switchChainAsync?.({ chainId: MONAD_CHAIN_ID })}
+              className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:brightness-110"
+            >
+              Switch to Monad
+            </button>
           </motion.div>
         )}
 
@@ -90,9 +98,17 @@ export default function HeroSection() {
               <div className="px-6 py-3 rounded-xl bg-gradient-cyber border border-cyber font-mono text-sm text-primary">
                 {wallet.address?.slice(0, 6)}...{wallet.address?.slice(-4)}
               </div>
-              <div className="px-6 py-2 rounded-lg bg-primary/10 border border-primary/20 font-mono text-xs text-primary/80">
-                {isMonitoring ? "Monitoring Active" : "Monitoring Inactive"} · {wallet.balance.toFixed(4)} MON
-              </div>
+              <button
+                type="button"
+                onClick={toggleMonitoring}
+                className={`px-6 py-2 rounded-lg border font-mono text-xs transition-colors ${
+                  isMonitoring
+                    ? "bg-primary/20 border-primary text-primary"
+                    : "bg-muted/50 border-border text-muted-foreground hover:border-primary/50"
+                }`}
+              >
+                {isMonitoring ? "● Monitoring active" : "○ Monitoring off"} · {wallet.balance.toFixed(4)} MON
+              </button>
             </div>
           )}
           <a

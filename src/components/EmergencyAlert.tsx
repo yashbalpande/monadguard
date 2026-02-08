@@ -1,9 +1,46 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { useWriteContract } from "wagmi";
 import { useGuard } from "@/contexts/GuardContext";
 import { AlertTriangle, Lock, RotateCcw, X } from "lucide-react";
 
+const ERC20_APPROVE_ABI = [
+  {
+    type: "function" as const,
+    name: "approve",
+    stateMutability: "nonpayable" as const,
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ type: "bool" }],
+  },
+] as const;
+
 export default function EmergencyAlert() {
-  const { activeEmergency, freezeWallet, revokeApprovals, dismissEmergency } = useGuard();
+  const { activeEmergency, freezeWallet, revokeApprovals, dismissEmergency, lastApprovalForRevoke } = useGuard();
+  const { writeContractAsync, isPending: isRevokePending } = useWriteContract();
+
+  const handleRevokeClick = () => {
+    if (lastApprovalForRevoke) {
+      writeContractAsync({
+        abi: ERC20_APPROVE_ABI,
+        address: lastApprovalForRevoke.tokenAddress as `0x${string}`,
+        functionName: "approve",
+        args: [lastApprovalForRevoke.spenderAddress as `0x${string}`, 0n],
+      })
+        .then(() => {
+          revokeApprovals(true);
+          dismissEmergency();
+        })
+        .catch(() => {
+          revokeApprovals(false);
+          dismissEmergency();
+        });
+    } else {
+      revokeApprovals(false);
+      dismissEmergency();
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -42,14 +79,24 @@ export default function EmergencyAlert() {
 
             {/* Content */}
             <div className="p-6 space-y-5">
+              <div className="p-3 rounded-lg bg-emergency/10 border border-emergency/30">
+                <p className="text-xs font-mono uppercase tracking-wider text-emergency/80 mb-1">Incident recorded</p>
+                <p className="text-sm font-medium text-foreground">An error or risky event was detected. This has been logged in your Incident timeline.</p>
+              </div>
+
               <div>
-                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider mb-1">Rule Triggered</p>
+                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider mb-1">Rule that triggered</p>
                 <p className="text-sm font-medium">{activeEmergency.ruleLabel}</p>
               </div>
 
               <div>
-                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider mb-1">What Happened</p>
+                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider mb-1">What happened (why we alerted)</p>
                 <p className="text-sm text-foreground/80 leading-relaxed">{activeEmergency.description}</p>
+              </div>
+
+              <div>
+                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider mb-1">What you can do now</p>
+                <p className="text-sm text-foreground/80">Freeze wallet (record only) or revoke approvals on-chain to stop further use of your allowances.</p>
               </div>
 
               {/* Actions */}
@@ -65,14 +112,12 @@ export default function EmergencyAlert() {
                   Freeze Wallet
                 </button>
                 <button
-                  onClick={() => {
-                    revokeApprovals();
-                    dismissEmergency();
-                  }}
-                  className="flex items-center justify-center gap-2 py-3 rounded-xl border border-emergency/50 text-emergency font-semibold text-sm hover:bg-emergency/10 transition-all active:scale-95"
+                  onClick={handleRevokeClick}
+                  disabled={isRevokePending}
+                  className="flex items-center justify-center gap-2 py-3 rounded-xl border border-emergency/50 text-emergency font-semibold text-sm hover:bg-emergency/10 transition-all active:scale-95 disabled:opacity-50"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  Revoke All
+                  {isRevokePending ? "Revoking…" : lastApprovalForRevoke ? "Revoke on-chain" : "Revoke (record)"}
                 </button>
               </div>
             </div>

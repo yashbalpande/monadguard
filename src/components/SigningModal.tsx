@@ -18,6 +18,7 @@ interface SigningModalProps {
   request: SigningRequest | null;
   onAllow: () => void;
   onReject: () => void;
+  emergencyMode?: boolean;
 }
 
 export function SigningModal({
@@ -25,8 +26,10 @@ export function SigningModal({
   request,
   onAllow,
   onReject,
+  emergencyMode = false,
 }: SigningModalProps) {
   const [copied, setCopied] = useState(false);
+  const allowBlocked = emergencyMode || (request?.riskLevel === "critical");
 
   const getRiskColor = () => {
     if (!request) return "";
@@ -56,14 +59,16 @@ export function SigningModal({
                 {getRiskIcon()}
                 <span>
                   {request.riskLevel === "critical"
-                    ? "Risky Signature Request"
+                    ? (request.isPhishingAttempt ? "⚠️ SCAM DETECTED – Do not sign" : "⚠️ BLOCKED – Possible scam")
                     : request.riskLevel === "warning"
-                      ? "Review This Request Carefully"
-                      : "Sign This Message?"}
+                      ? "Review this request carefully"
+                      : "Sign this message?"}
                 </span>
               </DialogTitle>
               <DialogDescription className="text-base">
-                Review the request details carefully before proceeding
+                {request.riskLevel === "critical"
+                  ? "We blocked this because it looks like a scam or high risk. You can only cancel."
+                  : "Review the request details carefully before proceeding."}
               </DialogDescription>
             </DialogHeader>
 
@@ -83,10 +88,10 @@ export function SigningModal({
                     <XCircle className="w-6 h-6 text-destructive flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-bold text-destructive mb-1">
-                        This looks like a scam
+                        SCAM: This site is impersonating a real app
                       </p>
                       <p className="text-sm text-destructive/90">
-                        The website is trying to impersonate a legitimate DeFi app. Do not sign anything on this site.
+                        The domain matches a known phishing pattern. Do not sign. Close this tab and use your bookmarks to open the real site.
                       </p>
                     </div>
                   </div>
@@ -168,6 +173,15 @@ export function SigningModal({
                 </Alert>
               )}
 
+              {/* Emergency mode: signing blocked */}
+              {emergencyMode && (
+                <div className="p-4 rounded-lg border-2 border-emergency/50 bg-emergency/10">
+                  <p className="text-sm font-semibold text-emergency">
+                    Emergency mode: signing is blocked. Revoke approvals or transfer to a safe address first.
+                  </p>
+                </div>
+              )}
+
               {/* Safety Tips */}
               <div className="p-4 rounded-lg bg-blue-500/5 border border-blue-500/20">
                 <p className="text-sm font-semibold mb-2 text-blue-700">
@@ -205,15 +219,15 @@ export function SigningModal({
               </Button>
               <Button
                 onClick={onAllow}
-                disabled={request.riskLevel === "critical"}
+                disabled={allowBlocked}
                 className="flex-1"
                 size="lg"
-                variant={
-                  request.riskLevel === "critical" ? "outline" : "default"
-                }
+                variant={allowBlocked ? "outline" : "default"}
               >
-                {request.riskLevel === "critical"
-                  ? "Too Risky to Allow"
+                {allowBlocked
+                  ? emergencyMode
+                    ? "Blocked (emergency)"
+                    : "Too Risky to Allow"
                   : "Continue"}
               </Button>
             </div>

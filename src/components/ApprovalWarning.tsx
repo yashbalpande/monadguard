@@ -17,6 +17,7 @@ interface ApprovalWarningProps {
   risk: ApprovalRisk | null;
   onAllow: () => void;
   onReject: () => void;
+  emergencyMode?: boolean;
 }
 
 export function ApprovalWarning({
@@ -24,8 +25,11 @@ export function ApprovalWarning({
   risk,
   onAllow,
   onReject,
+  emergencyMode = false,
 }: ApprovalWarningProps) {
   if (!risk) return null;
+
+  const allowBlocked = emergencyMode || risk.riskLevel === "critical";
 
   const getRiskColor = () => {
     if (risk.riskLevel === "critical")
@@ -53,14 +57,16 @@ export function ApprovalWarning({
                 {getRiskIcon()}
                 <span>
                   {risk.riskLevel === "critical"
-                    ? "This Approval Looks Risky"
+                    ? "⚠️ RISKY – Possible scam (unlimited to unknown contract)"
                     : risk.riskLevel === "warning"
-                      ? "Review This Approval"
-                      : "Approval Request"}
+                      ? "Review this approval"
+                      : "Approval request"}
                 </span>
               </DialogTitle>
               <DialogDescription>
-                Review the approval details before confirming
+                {risk.riskLevel === "critical"
+                  ? "We treat this as high scam risk. You can only cancel. Use a limited amount or a known contract instead."
+                  : "Review the approval details before confirming."}
               </DialogDescription>
             </DialogHeader>
 
@@ -131,6 +137,15 @@ export function ApprovalWarning({
                 </Alert>
               )}
 
+              {/* Emergency mode: approval blocked */}
+              {emergencyMode && (
+                <div className="p-4 rounded-lg border-2 border-destructive/50 bg-destructive/10">
+                  <p className="text-sm font-semibold text-destructive">
+                    Emergency mode: new approvals are blocked. Revoke existing approvals first.
+                  </p>
+                </div>
+              )}
+
               {/* Safety Recommendations */}
               <div className="p-4 rounded-lg bg-blue-500/5 border border-blue-500/20 space-y-2">
                 <p className="text-sm font-semibold text-blue-700">
@@ -167,15 +182,15 @@ export function ApprovalWarning({
               </Button>
               <Button
                 onClick={onAllow}
-                disabled={risk.riskLevel === "critical"}
+                disabled={allowBlocked}
                 className="flex-1"
                 size="lg"
-                variant={
-                  risk.riskLevel === "critical" ? "outline" : "default"
-                }
+                variant={allowBlocked ? "outline" : "default"}
               >
-                {risk.riskLevel === "critical"
-                  ? "Too Risky for Now"
+                {allowBlocked
+                  ? emergencyMode
+                    ? "Blocked (emergency)"
+                    : "Too Risky for Now"
                   : "Approve"}
               </Button>
             </div>

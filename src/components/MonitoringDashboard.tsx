@@ -4,7 +4,7 @@ import { Activity, Shield, Wifi, AlertTriangle, Zap, TrendingDown } from "lucide
 import { useState, useEffect } from "react";
 
 export default function MonitoringDashboard() {
-  const { wallet, rules, isMonitoring, simulateEmergency } = useGuard();
+  const { wallet, rules, isMonitoring, simulateEmergency, codeScanResult } = useGuard();
   const [heartbeat, setHeartbeat] = useState(0);
 
   useEffect(() => {
@@ -12,6 +12,14 @@ export default function MonitoringDashboard() {
     const interval = setInterval(() => setHeartbeat((h) => h + 1), 2000);
     return () => clearInterval(interval);
   }, [isMonitoring, wallet.connected]);
+
+  const [lastCheck, setLastCheck] = useState<Date | null>(null);
+  useEffect(() => {
+    if (!isMonitoring || !wallet.connected) return;
+    setLastCheck(new Date());
+    const t = setInterval(() => setLastCheck(new Date()), 8000);
+    return () => clearInterval(t);
+  }, [isMonitoring, wallet.connected, heartbeat]);
 
   const activeRules = rules.filter((r) => r.enabled).length;
 
@@ -80,6 +88,18 @@ export default function MonitoringDashboard() {
             </motion.div>
           ))}
         </div>
+
+        {/* Active monitoring info */}
+        {wallet.connected && isMonitoring && (
+          <p className="text-xs font-mono text-primary/70 mb-4">
+            Balance & approval checks every 8s · Last check: {lastCheck ? lastCheck.toLocaleTimeString() : "—"}
+          </p>
+        )}
+        {codeScanResult && (
+          <p className="text-xs font-mono text-muted-foreground mb-2">
+            Last code scan: <span className={codeScanResult.riskLevel === "critical" ? "text-destructive" : codeScanResult.riskLevel === "warning" ? "text-yellow-500" : "text-success"}>{codeScanResult.riskLevel}</span> (score {codeScanResult.score})
+          </p>
+        )}
 
         {/* Emergency mode banner */}
         {wallet.emergencyMode && (

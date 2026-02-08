@@ -19,6 +19,9 @@ export default function IncidentTimeline() {
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
             Incident <span className="text-gradient-cyber">Timeline</span>
           </h2>
+          <p className="text-sm text-muted-foreground mt-3 max-w-xl mx-auto">
+            Every scam blocked, warning shown, and incident is recorded here with time and what you did.
+          </p>
         </motion.div>
 
         {events.length === 0 ? (
@@ -30,7 +33,7 @@ export default function IncidentTimeline() {
           >
             <Shield className="w-12 h-12 text-primary/30 mx-auto mb-4" />
             <p className="text-muted-foreground">No activity yet.</p>
-            <p className="text-xs text-muted-foreground/60 mt-2 font-mono">Activity will appear here when you test the system</p>
+            <p className="text-xs text-muted-foreground/60 mt-2 font-mono">When a scam is blocked or an incident occurs, it will appear here with a label (Scam/Blocked, Incident, or Warning/Info).</p>
           </motion.div>
         ) : (
           <div className="space-y-4">
@@ -52,13 +55,31 @@ export default function IncidentTimeline() {
                     <AlertTriangle className="w-5 h-5 text-emergency" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="font-semibold text-sm">{event.ruleLabel}</p>
-                      <span className="text-xs font-mono text-muted-foreground flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {event.timestamp.toLocaleTimeString()}
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span
+                        className={`text-xs font-mono px-1.5 py-0.5 rounded ${
+                          event.severity === "critical"
+                            ? "bg-destructive/20 text-destructive"
+                            : event.severity === "high"
+                              ? "bg-emergency/20 text-emergency"
+                              : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {event.severity === "critical"
+                          ? "Scam / Blocked"
+                          : event.severity === "high"
+                            ? "Incident"
+                            : "Warning / Info"}
                       </span>
+                      <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                        Condition {event.sources.includes("signing") ? "1" : event.sources.includes("approval") ? "2" : event.sources.includes("code_safety") ? "3" : "Rule"}
+                      </span>
+                      <p className="font-semibold text-sm">{event.ruleLabel}</p>
                     </div>
+                    <span className="text-xs font-mono text-muted-foreground flex items-center gap-1 mb-2">
+                      <Clock className="w-3 h-3" />
+                      {event.timestamp.toLocaleTimeString()}
+                    </span>
                     <p className="text-xs text-muted-foreground mb-3 leading-relaxed">{event.description}</p>
                     {event.actionTaken && (
                       <div className="flex items-center gap-2 text-xs">

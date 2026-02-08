@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { scanSolidityCode, type CodeScanResult } from "@/lib/codeSafety";
+import { scanSolidityCode, parseGitHubUrl, type CodeScanResult } from "@/lib/codeSafety";
 
 interface CodeScannerModalProps {
   isOpen: boolean;
@@ -26,18 +26,60 @@ export function CodeScannerModal({
   onScanComplete,
 }: CodeScannerModalProps) {
   const [code, setCode] = useState("");
+  const [githubInput, setGithubInput] = useState("");
   const [scanResult, setScanResult] = useState<CodeScanResult | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [isLoadingUrl, setIsLoadingUrl] = useState(false);
   const [activeTab, setActiveTab] = useState("input");
 
+  const fetchCodeFromUrl = async (url: string): Promise<string> => {
+    const trimmed = url.trim();
+    if (!trimmed.startsWith("http")) return "";
+    let fetchUrl = trimmed;
+    if (trimmed.includes("github.com/") && !trimmed.includes("raw.githubusercontent.com")) {
+      const parsed = parseGitHubUrl(trimmed);
+      if (parsed.isValid) {
+        try {
+          const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}`);
+          const repo = await res.json();
+          const branch = repo.default_branch || "main";
+          const treeRes = await fetch(
+            `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/git/trees/${branch}?recursive=1`
+          );
+          const tree = await treeRes.json();
+          const solFile = tree.tree?.find((n: { path: string }) => n.path.endsWith(".sol"));
+          if (solFile) fetchUrl = `https://raw.githubusercontent.com/${parsed.owner}/${parsed.repo}/${branch}/${solFile.path}`;
+        } catch {
+          return "";
+        }
+      }
+    }
+    const res = await fetch(fetchUrl);
+    if (!res.ok) throw new Error("Failed to fetch");
+    return res.text();
+  };
+
   const handleScan = async () => {
-    if (!code.trim()) return;
+    const source = githubInput.trim() || undefined;
+    let codeToScan = code.trim();
+    if (source && source.startsWith("http")) {
+      setIsLoadingUrl(true);
+      try {
+        codeToScan = await fetchCodeFromUrl(source);
+        if (codeToScan) setCode(codeToScan);
+      } catch {
+        setIsLoadingUrl(false);
+        return;
+      }
+      setIsLoadingUrl(false);
+    }
+    if (!codeToScan) return;
 
     setIsScanning(true);
-    // Simulate scanning delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 600));
 
-    const result = scanSolidityCode(code);
+    const result = scanSolidityCode(codeToScan);
+    if (source) result.source = source;
     setScanResult(result);
     onScanComplete(result);
 
@@ -79,9 +121,22 @@ export function CodeScannerModal({
 
           <TabsContent value="input" className="space-y-4">
             <div className="space-y-2">
+              <label className="text-sm font-semibold">GitHub repo or raw .sol URL (optional)</label>
+              <input
+                type="url"
+                placeholder="https://github.com/owner/repo or https://raw.githubusercontent.com/..."
+                value={githubInput}
+                onChange={(e) => setGithubInput(e.target.value)}
+                className="w-full p-3 rounded-lg border border-muted-foreground/20 bg-muted/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-xs text-muted-foreground">
+                Paste a repo link (we load the first .sol file) or a raw file URL to scan.
+              </p>
+            </div>
+            <div className="space-y-2">
               <label className="text-sm font-semibold">Solidity Code</label>
               <textarea
-                placeholder="Paste your Solidity contract code here..."
+                placeholder="Or paste your Solidity contract code here..."
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 className="w-full h-64 p-3 rounded-lg border border-muted-foreground/20 bg-muted/50 font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
@@ -101,11 +156,11 @@ export function CodeScannerModal({
 
             <Button
               onClick={handleScan}
-              disabled={!code.trim() || isScanning}
+              disabled={(!code.trim() && !githubInput.trim()) || isScanning || isLoadingUrl}
               className="w-full"
               size="lg"
             >
-              {isScanning ? "Scanning..." : "Scan Code"}
+              {isLoadingUrl ? "Loading from URL…" : isScanning ? "Scanning…" : "Scan Code"}
             </Button>
           </TabsContent>
 

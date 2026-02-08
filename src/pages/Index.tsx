@@ -6,13 +6,16 @@ import SolutionSection from "@/components/SolutionSection";
 import MonitoringDashboard from "@/components/MonitoringDashboard";
 import EmergencyAlert from "@/components/EmergencyAlert";
 import IncidentTimeline from "@/components/IncidentTimeline";
+import HowItWorksSection from "@/components/HowItWorksSection";
 import DemoTriggers from "@/components/DemoTriggers";
 import { SigningModal } from "@/components/SigningModal";
 import { CodeScannerModal } from "@/components/CodeScannerModal";
 import { ApprovalWarning } from "@/components/ApprovalWarning";
+import type { CodeScanResult } from "@/lib/codeSafety";
 
 function IndexContent() {
   const {
+    wallet,
     simulateSigningRisk,
     simulateApprovalRisk,
     simulateCodeScan,
@@ -27,10 +30,27 @@ function IndexContent() {
   const [codeScannerOpen, setCodeScannerOpen] = useState(false);
 
   const handleSimulateSign = () => {
-    // Simulate a phishing attempt - domain mimicking Uniswap
     simulateSigningRisk(
       "uniswapp-swap.xyz",
       "0x1234567890abcdef... [Verify permissions for token transfer]"
+    );
+  };
+
+  const handleSimulateSignThisSite = () => {
+    const domain =
+      typeof window !== "undefined" && window.location?.hostname
+        ? window.location.hostname
+        : "localhost";
+    simulateSigningRisk(
+      domain,
+      "Sign in to continue. Nonce: " + Math.random().toString(36).slice(2)
+    );
+  };
+
+  const handleSimulateSafeSign = () => {
+    simulateSigningRisk(
+      "uniswap.org",
+      "Login to Uniswap. Nonce: xyz789. Timestamp: " + Date.now() + ". Request valid for 5 minutes."
     );
   };
 
@@ -42,8 +62,24 @@ function IndexContent() {
     );
   };
 
-  const handleSimulateCode = (code: string) => {
-    simulateCodeScan(code);
+  const handleSimulateCode = (result: CodeScanResult) => {
+    simulateCodeScan(result);
+  };
+
+  const handleSimulateScamCode = () => {
+    const scamSnippet = `
+contract RugPull {
+  address owner;
+  function ownerWithdraw() public {
+    require(msg.sender == owner);
+    selfdestruct(payable(owner));
+  }
+  function mint(uint max) public {
+    // unlimited mint
+  }
+}
+`;
+    simulateCodeScan(scamSnippet);
   };
 
   return (
@@ -53,10 +89,14 @@ function IndexContent() {
         <ProblemSection />
         <SolutionSection />
         <MonitoringDashboard />
+        <HowItWorksSection />
         <DemoTriggers
           onSimulateSign={handleSimulateSign}
+          onSimulateSignThisSite={handleSimulateSignThisSite}
+          onSimulateSafeSign={handleSimulateSafeSign}
           onSimulateApproval={handleSimulateApproval}
           onOpenCodeScanner={() => setCodeScannerOpen(true)}
+          onSimulateScamCode={handleSimulateScamCode}
         />
         <IncidentTimeline />
       </div>
@@ -67,6 +107,7 @@ function IndexContent() {
         request={signingRequest}
         onAllow={allowSigningRequest}
         onReject={rejectSigningRequest}
+        emergencyMode={wallet.emergencyMode}
       />
 
       <ApprovalWarning
@@ -74,6 +115,7 @@ function IndexContent() {
         risk={approvalRisk}
         onAllow={allowApproval}
         onReject={rejectApproval}
+        emergencyMode={wallet.emergencyMode}
       />
 
       <CodeScannerModal
