@@ -8,6 +8,9 @@ import EmergencyAlert from "@/components/EmergencyAlert";
 import IncidentTimeline from "@/components/IncidentTimeline";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import DemoTriggers from "@/components/DemoTriggers";
+import ApprovalManager from "@/components/ApprovalManager";
+import AddressLabels from "@/components/AddressLabels";
+import TransactionDecoder from "@/components/TransactionDecoder";
 import { SigningModal } from "@/components/SigningModal";
 import { CodeScannerModal } from "@/components/CodeScannerModal";
 import { ApprovalWarning } from "@/components/ApprovalWarning";
@@ -28,6 +31,7 @@ function IndexContent() {
   } = useGuard();
 
   const [codeScannerOpen, setCodeScannerOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"overview" | "approvals" | "addresses" | "decoder">("overview");
 
   const handleSimulateSign = () => {
     simulateSigningRisk(
@@ -88,7 +92,45 @@ contract RugPull {
         <HeroSection />
         <ProblemSection />
         <SolutionSection />
-        <MonitoringDashboard />
+        
+        {/* Main Dashboard with Tabs */}
+        <div className="bg-gray-950 text-gray-100">
+          <div className="max-w-6xl mx-auto px-6 py-12">
+            {/* Tab Navigation */}
+            <div className="flex gap-2 mb-12 border-b border-gray-800">
+              {[
+                { id: "overview", label: "Overview" },
+                { id: "approvals", label: "Approvals" },
+                { id: "addresses", label: "Addresses" },
+                { id: "decoder", label: "Decoder" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
+                    activeTab === tab.id
+                      ? "border-purple-500 text-purple-400"
+                      : "border-transparent text-gray-400 hover:text-gray-200"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab Content */}
+            {activeTab === "overview" && (
+              <div className="space-y-8">
+                <MonitoringDashboard />
+                <IncidentTimeline />
+              </div>
+            )}
+            {activeTab === "approvals" && <ApprovalManager />}
+            {activeTab === "addresses" && <AddressLabels />}
+            {activeTab === "decoder" && <TransactionDecoder />}
+          </div>
+        </div>
+        
         <HowItWorksSection />
         <DemoTriggers
           onSimulateSign={handleSimulateSign}
@@ -98,7 +140,6 @@ contract RugPull {
           onOpenCodeScanner={() => setCodeScannerOpen(true)}
           onSimulateScamCode={handleSimulateScamCode}
         />
-        <IncidentTimeline />
       </div>
 
       {/* Modals for all three conditions */}
