@@ -1,142 +1,180 @@
-# Monad Guard
+# MonadGuard
 
-A wallet protection system that monitors your blockchain activity and alerts you to risky transactions before they happen.
+MonadGuard is a safety tool for Web3 users.
 
-## What It Does
+It helps protect users from scams, phishing, and common on-chain mistakes by warning them early and allowing fast safety actions.  
+This project was built for a hackathon to show how wallet protection can work better on fast blockchains like Monad.
 
-Monad Guard watches three types of threats:
+This is not a trading app.  
+This is a protection layer.
 
-1. **Signature Requests** - When a website asks you to sign, we detect if it's a scam trying to impersonate a real service. We catch phishing domains (like `uniswapp.xyz` mimicking Uniswap), unknown websites, and messages that could be replayed.
+---
 
-2. **Token Approvals** - We flag unlimited approvals and track which contracts ask for permission to spend your tokens. The system catches unknown spenders and monitors how your funds are used after you approve.
+## What problem does MonadGuard solve?
 
-3. **Contract Code** - You can paste a Solidity contract to scan it for dangerous patterns. We check for access control issues, risky design patterns, and score the overall risk.
+Most people do not lose money in Web3 because they are bad at trading.  
+They lose money because they:
 
-When something looks wrong, the system restricts your wallet and gives you a moment to review what's happening.
+- Sign messages without understanding them
+- Approve the wrong contract
+- Give unlimited token approvals
+- Interact with fake or malicious websites
+- Copy and use scam smart contracts from GitHub
+- React too late when something goes wrong
 
-## Getting Started
+Once a transaction is confirmed on-chain, it cannot be undone.
 
-### Requirements
+MonadGuard focuses on stopping damage **before or during** these moments.
 
-- Node.js (v16 or later)
-- npm or yarn
-- MetaMask or another Web3 wallet
+---
 
-### Installation
+## What does MonadGuard do?
 
-```bash
-git clone <YOUR_GIT_URL>
-cd wallet-sentinel
-npm install
-npm run dev
-```
+MonadGuard watches for risky actions and responds in seconds.
 
-The app runs on http://localhost:5173 by default.
+It protects users in three real situations.
 
-### Building for Production
+---
 
-```bash
-npm run build
-```
+## 1. Website signing protection
 
-## How It Works
+When a user connects a wallet or signs a message on a website:
 
-The system uses a unified emergency engine that tracks your wallet state and checks transactions as they happen. When it detects something risky:
+- MonadGuard detects the signing request
+- Shows what the website is asking for
+- Checks for risky or reusable signatures
+- Warns the user if the request looks dangerous
+- Allows the user to cancel before signing
 
-1. You get an alert with details about what triggered it
-2. Your wallet gets temporarily restricted
-3. You can choose to proceed anyway or cancel
+This helps prevent phishing and blind signing.
 
-All activity is logged so you can see the history of alerts and actions.
+---
 
-## Tech Stack
+## 2. Token approval protection
 
-- **Vite** - Fast build tool
-- **React 18** - UI framework
-- **TypeScript** - Type safety
-- **Wagmi** - Wallet connection
-- **Tailwind CSS** - Styling
-- **shadcn/ui** - Components
+When a user tries to approve a token:
 
-Runs on Monad Testnet (Chain ID: 10143).
+- MonadGuard detects ERC-20 approval transactions
+- Warns about unlimited approvals
+- Warns about unknown or suspicious spender contracts
+- Monitors approval usage after signing
+- Allows instant revocation of approvals
+- Triggers Emergency Mode if approval is abused
+
+This helps prevent approval-based wallet drains.
+
+---
+
+## 3. Scam contract and GitHub repo scanning
+
+When a user pastes a smart contract or GitHub repository:
+
+- MonadGuard scans Solidity code
+- Detects common dangerous patterns such as:
+  - hidden withdraw functions
+  - owner-only drain logic
+  - delegatecall usage
+  - obfuscated code blocks
+- Generates a simple risk report
+- Warns the user before deployment or use
+
+This helps developers and users avoid copying scam code.
+
+---
+
+## What is Emergency Mode?
+
+Emergency Mode is a real on-chain safety state.
+
+When Emergency Mode is active:
+- Risky actions are blocked
+- Only safe actions are allowed, such as:
+  - revoking token approvals
+  - transferring funds to a safe address
+- The user clearly sees that the wallet is in a restricted state
+
+Emergency Mode exists to prevent panic actions from causing more damage.
+
+---
+
+## Why Monad?
+
+MonadGuard is designed for fast blockchains.
+
+On slow chains, detecting and reacting to problems can take too long.  
+On Monad:
+
+- Blocks are fast
+- Monitoring can run frequently
+- Emergency actions can execute in seconds
+
+This makes real-time wallet protection possible.
+
+---
+
+## What is real and what is simulated?
+
+For the hackathon:
+
+Real:
+- Wallet connection
+- Signing detection
+- Approval detection
+- Emergency Mode state
+- At least one real safety action (such as approval revocation)
+
+Simulated:
+- Scam events
+- Exploit scenarios
+- Some risk signals
+
+Simulation is used only to demonstrate behavior without real loss.
+
+---
+
+## Tech stack
+
+- Frontend: Next.js, React, Tailwind CSS
+- Wallet authentication: Privy
+- Backend: Node.js, Supabase
+- Indexing: Envio
+- Smart contracts: Solidity
+- Oracles: Pyth or RedStone
+
+---
+
+## Project goals
+
+MonadGuard is not trying to replace existing security products.
+
+The goal is to show:
+- How wallet safety can be user-controlled
+- How fast chains enable better protection
+- How simple rules and clear UX can reduce losses
+
+---
 
 ## Limitations
 
-This is pattern-matching detection, not prediction. The system analyzes transactions and contract code using heuristics - it's not perfect and will miss some threats. It also can't catch every scam or exploit. 
+- Detection is based on rules and heuristics
+- This does not guarantee full protection
+- Users always have final control
 
-Use it as a tool to catch common mistakes and slow yourself down when something looks off.
+MonadGuard is meant to reduce risk, not eliminate it completely.
 
-## Code Structure
+---
 
-```
-src/
-  components/       - UI components
-  contexts/         - Global state (GuardContext)
-  lib/              - Detection business logic
-  pages/            - Page layouts
-  hooks/            - Custom React hooks
-```
+## Hackathon demo flow
 
-Key files:
-- `GuardContext.tsx` - Central emergency engine and state management
-- `signingGuard.ts` - Signature request analysis
-- `approvalGuard.ts` - Token approval detection
-- `codeSafety.ts` - Solidity contract scanning
+1. Connect wallet
+2. Enable protection rules
+3. Trigger a simulated risky action
+4. Show warning and Emergency Mode
+5. Perform a safety action
+6. Show incident log
 
-## Scam Detection
+---
 
-The system detects when you visit suspicious websites trying to steal your crypto:
+## License
 
-- **Domain Impersonation** - Catches `uniswapp.xyz` mimicking `uniswap.org`
-- **Phishing Sites** - Flags obvious scams and domain typos
-- **Unknown Websites** - Alerts you on first-time domains
-- **Malicious Messages** - Detects hex-encoded or replayable signatures
-
-See [SCAM_DETECTION_GUIDE.md](SCAM_DETECTION_GUIDE.md) for detailed examples and how to test it.
-
-## Smart Contracts
-
-Monad Guard includes on-chain smart contracts for advanced wallet security features:
-
-### Three Core Contracts
-
-1. **EmergencyGuard** - Freeze your account instantly in case of compromise
-   - Activate emergency mode to restrict all transactions
-   - Add trusted guardians to help manage your account
-   - Full control stays with you
-
-2. **ApprovalManager** - Track and manage token approvals on-chain
-   - See all active token approvals with spending limits
-   - Identify unlimited approvals (high risk)
-   - Revoke approvals directly from the contract
-   - Full approval history stored on-chain
-
-3. **TransactionValidator** - Analyze transactions with on-chain risk scoring
-   - Validate transactions before they're sent
-   - Risk scoring based on target, value, and function signature
-   - Maintain validation history on-chain
-   - Suspend suspicious addresses
-
-### Deploying Contracts
-
-All contracts are configured for **Monad Testnet** (Chain ID: 10143).
-
-**Quick Start:**
-
-1. Get testnet MON tokens: https://faucet.monad.xyz
-2. Configure `.env` with your private key
-3. Deploy: `npx hardhat run scripts/deploy.ts --network monad_testnet`
-
-For detailed deployment instructions, see [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md).
-
-### Contract Addresses
-
-After deployment, add contract addresses to your `.env`:
-
-```env
-VITE_EMERGENCY_GUARD_ADDRESS=0x...
-VITE_APPROVAL_MANAGER_ADDRESS=0x...
-VITE_TRANSACTION_VALIDATOR_ADDRESS=0x...
-```
-
-The frontend automatically integrates with deployed contracts via Wagmi hooks.
+This project is for educational and hackathon purposes.
