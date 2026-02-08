@@ -58,65 +58,49 @@ export default function LandingPage() {
     <div className="w-full min-h-screen bg-gray-950 text-gray-100">
       {/* Header */}
       <header className="border-b border-gray-800 sticky top-0 bg-gray-950 z-40">
-        <div className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Shield className="w-6 h-6 text-purple-500" />
-            <span className="text-xl font-bold">Monad Guard</span>
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-purple-500" />
+            <span className="font-bold">Monad Guard</span>
           </div>
-          <nav className="hidden md:flex items-center gap-12 text-sm">
-            <a href="#" className="text-gray-400 hover:text-gray-200">
-              Docs
-            </a>
-            <a href="#" className="text-gray-400 hover:text-gray-200">
-              GitHub
-            </a>
-          </nav>
           <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white">
-            <Link to="/dashboard">Launch</Link>
+            <Link to="/dashboard">Dashboard</Link>
           </Button>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="max-w-6xl mx-auto px-6 py-24">
-        <div className="space-y-12">
-          <div className="space-y-6">
-            <h1 className="text-5xl md:text-6xl font-bold leading-tight">
-              Stop losing crypto<br />
-              to fake websites
-            </h1>
-            <p className="text-xl text-gray-400 max-w-2xl">
-              Monad Guard checks domains for phishing attempts and known scam patterns. Check before you sign.
-            </p>
-          </div>
+      {/* Hero - Simplified */}
+      <section className="max-w-4xl mx-auto px-6 py-16">
+        <h1 className="text-4xl font-bold mb-4">
+          Check if a website is a scam
+        </h1>
+        <p className="text-gray-400 mb-8 max-w-2xl">
+          Before you connect your wallet or sign something, check if the site is real or fake.
+        </p>
 
-          {/* Domain Check */}
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-8 max-w-2xl">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">
-                  Check a domain
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="uniswap.org"
-                    value={domainInput}
-                    onChange={(e) => setDomainInput(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && handleCheckDomain()}
-                    className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                  <Button
-                    onClick={handleCheckDomain}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-6"
-                  >
-                    Check
-                  </Button>
-                </div>
-              </div>
+        {/* Domain Check - Main Feature */}
+        <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-12">
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="paste a domain (e.g. uniswap.org)"
+                value={domainInput}
+                onChange={(e) => setDomainInput(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleCheckDomain()}
+                className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+              />
+              <Button
+                onClick={handleCheckDomain}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                Check
+              </Button>
+            </div>
 
-              {domainResult && (
-                <div className={`border rounded-lg p-4 ${
+            {domainResult && (
+              <div
+                className={`border rounded-lg p-4 ${
                   domainResult.severity === "critical"
                     ? "bg-red-950 border-red-800"
                     : domainResult.severity === "high"
@@ -124,16 +108,19 @@ export default function LandingPage() {
                     : domainResult.isSafe
                     ? "bg-green-950 border-green-800"
                     : "bg-yellow-950 border-yellow-800"
-                }`}>
-                  <div className="flex items-start gap-3">
-                    {domainResult.severity === "critical" || domainResult.severity === "high" ? (
-                      <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-400" />
-                    ) : (
-                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-green-400" />
-                    )}
-                    <div>
-                      <div className="font-semibold mb-1">{domainResult.domain}</div>
-                      <div className={`text-sm ${
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  {domainResult.severity === "critical" ||
+                  domainResult.severity === "high" ? (
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-400" />
+                  ) : (
+                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-green-400" />
+                  )}
+                  <div>
+                    <div className="font-semibold text-sm">{domainResult.domain}</div>
+                    <div
+                      className={`text-sm mt-1 ${
                         domainResult.severity === "critical"
                           ? "text-red-300"
                           : domainResult.severity === "high"
@@ -141,146 +128,123 @@ export default function LandingPage() {
                           : domainResult.isSafe
                           ? "text-green-300"
                           : "text-yellow-300"
-                      }`}>
-                        {domainResult.risk}
-                      </div>
-                      <p className="text-sm text-gray-400 mt-2">
-                        {domainResult.explanation}
-                      </p>
-                      {domainResult.trustScore !== undefined && (
-                        <div className="mt-2 text-xs text-gray-500">
-                          Trust score: {domainResult.trustScore}/100
-                        </div>
-                      )}
+                      }`}
+                    >
+                      {domainResult.risk}
                     </div>
+                    <p className="text-xs text-gray-400 mt-2">
+                      {domainResult.explanation}
+                    </p>
+                    {domainResult.trustScore !== undefined && (
+                      <div className="mt-2 text-xs text-gray-500">
+                        Trust score: {domainResult.trustScore}/100
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
+        </div>
 
-          {/* Quick examples */}
-          <div className="space-y-3">
-            <p className="text-xs font-semibold text-gray-500 uppercase">Try these:</p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {[
-                "stakesecured.com",
-                "maxes-q.com",
-                "uniswapp-swap.xyz",
-                "opensea-official.click",
-                "etherscan-verify.top",
-                "bitfreds.com"
-              ].map((domain) => (
-                <button
-                  key={domain}
-                  onClick={() => {
-                    setDomainInput(domain);
-                    setTimeout(() => handleCheckDomain(), 0);
-                  }}
-                  className="px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded text-xs text-gray-300 transition-colors"
-                >
-                  {domain}
-                </button>
-              ))}
-            </div>
+        {/* Quick Examples */}
+        <div>
+          <p className="text-xs text-gray-500 mb-3 font-medium">Try these to see how it works:</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {[
+              "stakesecured.com",
+              "maxes-q.com",
+              "uniswapp-swap.xyz",
+              "opensea-official.click",
+              "etherscan-verify.top",
+              "bitfreds.com"
+            ].map((domain) => (
+              <button
+                key={domain}
+                onClick={() => {
+                  setDomainInput(domain);
+                  setTimeout(() => handleCheckDomain(), 0);
+                }}
+                className="px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded text-xs text-gray-300 transition-colors text-left"
+              >
+                {domain}
+              </button>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* What it does */}
+      {/* How it works - Simple list */}
       <section className="border-t border-gray-800 bg-gray-900">
-        <div className="max-w-6xl mx-auto px-6 py-24">
-          <div className="grid md:grid-cols-3 gap-12">
-            <div>
-              <div className="text-3xl font-bold text-purple-500 mb-4">1</div>
-              <h3 className="font-semibold mb-3">Check domains</h3>
-              <p className="text-sm text-gray-400">
-                Enter any website URL to scan it against known phishing patterns and scam databases.
-              </p>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-purple-500 mb-4">2</div>
-              <h3 className="font-semibold mb-3">Review risks</h3>
-              <p className="text-sm text-gray-400">
-                Get details on what makes a site suspicious – typosquatting, suspicious TLDs, known exploits.
-              </p>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-purple-500 mb-4">3</div>
-              <h3 className="font-semibold mb-3">Protect yourself</h3>
-              <p className="text-sm text-gray-400">
-                Sign into the dashboard to get real-time protection when you interact with crypto apps.
-              </p>
-            </div>
-          </div>
+        <div className="max-w-4xl mx-auto px-6 py-12">
+          <h2 className="text-2xl font-bold mb-8">What it checks</h2>
+          <ul className="space-y-3 max-w-2xl">
+            <li className="flex gap-3">
+              <span className="text-purple-400 font-bold mt-0.5">1.</span>
+              <div>
+                <div className="font-semibold text-sm">Domain typos</div>
+                <div className="text-xs text-gray-400">uniswapp.xyz vs uniswap.org</div>
+              </div>
+            </li>
+            <li className="flex gap-3">
+              <span className="text-purple-400 font-bold mt-0.5">2.</span>
+              <div>
+                <div className="font-semibold text-sm">Known scam sites</div>
+                <div className="text-xs text-gray-400">Addresses we've seen used for phishing</div>
+              </div>
+            </li>
+            <li className="flex gap-3">
+              <span className="text-purple-400 font-bold mt-0.5">3.</span>
+              <div>
+                <div className="font-semibold text-sm">Suspicious patterns</div>
+                <div className="text-xs text-gray-400">Double dashes, weird TLDs, unusual characters</div>
+              </div>
+            </li>
+            <li className="flex gap-3">
+              <span className="text-purple-400 font-bold mt-0.5">4.</span>
+              <div>
+                <div className="font-semibold text-sm">Whitelisted domains</div>
+                <div className="text-xs text-gray-400">Verified safe sites like uniswap.org</div>
+              </div>
+            </li>
+          </ul>
         </div>
       </section>
 
-      {/* Known scams */}
+      {/* Warnings - What it doesn't do */}
       <section className="border-t border-gray-800">
-        <div className="max-w-6xl mx-auto px-6 py-24">
-          <h2 className="text-3xl font-bold mb-12">What we detect</h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="font-semibold text-purple-400 mb-4">Domain impersonation</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li>• uniswapp.xyz (mimics Uniswap)</li>
-                <li>• opensea-official.click (mimics OpenSea)</li>
-                <li>• etherscan-verify.top (mimics Etherscan)</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold text-purple-400 mb-4">Known scam platforms</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li>• stakesecured.com (fake investment)</li>
-                <li>• coinfred.com (fake crypto)</li>
-                <li>• bitcenter-us.com (fake exchange)</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold text-purple-400 mb-4">Suspicious patterns</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li>• Double dashes or underscores</li>
-                <li>• Suspicious TLDs (.xyz, .click, .top)</li>
-                <li>• Unusual character combinations</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold text-purple-400 mb-4">Limitations</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li>• Can't detect zero-day exploits</li>
-                <li>• Works without browser extension</li>
-                <li>• Manual checks only (not real-time yet)</li>
-              </ul>
-            </div>
-          </div>
+        <div className="max-w-4xl mx-auto px-6 py-12">
+          <h2 className="text-2xl font-bold mb-8">Limitations</h2>
+          <ul className="space-y-2 text-sm text-gray-400 max-w-2xl">
+            <li>• Can't detect brand new scam sites (not yet reported)</li>
+            <li>• This is pattern matching, not AI predictions</li>
+            <li>• Always double-check URLs yourself</li>
+            <li>• Use this in combination with other security practices</li>
+          </ul>
         </div>
       </section>
 
-      {/* CTA */}
+      {/* CTA - Simple */}
       <section className="border-t border-gray-800 bg-gray-900">
-        <div className="max-w-6xl mx-auto px-6 py-24 text-center">
-          <h2 className="text-3xl font-bold mb-6">Ready to protect your wallet?</h2>
-          <p className="text-gray-400 mb-8 max-w-2xl mx-auto">
-            Launch the dashboard to monitor your transactions and get alerts when something looks wrong.
+        <div className="max-w-4xl mx-auto px-6 py-12 text-center">
+          <h2 className="text-2xl font-bold mb-4">Get more protection</h2>
+          <p className="text-gray-400 mb-6 max-w-xl mx-auto text-sm">
+            Open the dashboard to monitor your transactions and get alerts when something looks risky.
           </p>
-          <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white px-8 h-12">
+          <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white">
             <Link to="/dashboard">Open Dashboard</Link>
           </Button>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Footer - Simple */}
       <footer className="border-t border-gray-800 bg-gray-950">
-        <div className="max-w-6xl mx-auto px-6 py-12">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-500">
-              © 2024 Monad Guard
-            </div>
-            <div className="flex gap-6 text-sm">
-              <a href="#" className="text-gray-500 hover:text-gray-400">Privacy</a>
-              <a href="#" className="text-gray-500 hover:text-gray-400">Terms</a>
-              <a href="#" className="text-gray-500 hover:text-gray-400">Contact</a>
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          <div className="text-xs text-gray-500 flex items-center justify-between">
+            <span>© 2024 Monad Guard</span>
+            <div className="flex gap-6">
+              <a href="#" className="hover:text-gray-400">Privacy</a>
+              <a href="#" className="hover:text-gray-400">Terms</a>
             </div>
           </div>
         </div>

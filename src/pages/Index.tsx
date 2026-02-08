@@ -11,6 +11,7 @@ import DemoTriggers from "@/components/DemoTriggers";
 import ApprovalManager from "@/components/ApprovalManager";
 import AddressLabels from "@/components/AddressLabels";
 import TransactionDecoder from "@/components/TransactionDecoder";
+import DomainChecker from "@/components/DomainChecker";
 import { SigningModal } from "@/components/SigningModal";
 import { CodeScannerModal } from "@/components/CodeScannerModal";
 import { ApprovalWarning } from "@/components/ApprovalWarning";
@@ -31,7 +32,7 @@ function IndexContent() {
   } = useGuard();
 
   const [codeScannerOpen, setCodeScannerOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "approvals" | "addresses" | "decoder">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "checker" | "approvals" | "addresses" | "decoder">("overview");
 
   const handleSimulateSign = () => {
     simulateSigningRisk(
@@ -100,6 +101,7 @@ contract RugPull {
             <div className="flex gap-2 mb-12 border-b border-gray-800">
               {[
                 { id: "overview", label: "Overview" },
+                { id: "checker", label: "Domain Check" },
                 { id: "approvals", label: "Approvals" },
                 { id: "addresses", label: "Addresses" },
                 { id: "decoder", label: "Decoder" },
@@ -125,6 +127,7 @@ contract RugPull {
                 <IncidentTimeline />
               </div>
             )}
+            {activeTab === "checker" && <DomainChecker />}
             {activeTab === "approvals" && <ApprovalManager />}
             {activeTab === "addresses" && <AddressLabels />}
             {activeTab === "decoder" && <TransactionDecoder />}
