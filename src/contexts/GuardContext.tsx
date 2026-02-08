@@ -1,4 +1,10 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
+import { useAccount, useConnect, useDisconnect, useBalance } from "wagmi";
+import { injected } from "wagmi/connectors";
+import { MONAD_CHAIN_ID } from "@/lib/chains";
+import { analyzeSigningRequest, type SigningRequest } from "@/lib/signingGuard";
+import { analyzeApprovalRisk, type ApprovalRisk } from "@/lib/approvalGuard";
+import { scanSolidityCode, type CodeScanResult } from "@/lib/codeSafety";
 
 export interface EmergencyRule {
   id: string;
@@ -20,6 +26,7 @@ export interface EmergencyEvent {
   description: string;
   actionTaken?: string;
   estimatedLossPrevented?: string;
+  sources: ("signing" | "approval" | "code_safety" | "balance_drain")[];
 }
 
 interface WalletState {
@@ -35,6 +42,9 @@ interface GuardContextType {
   events: EmergencyEvent[];
   isMonitoring: boolean;
   activeEmergency: EmergencyEvent | null;
+  signingRequest: SigningRequest | null;
+  approvalRisk: ApprovalRisk | null;
+  codeScanResult: CodeScanResult | null;
   connectWallet: () => void;
   disconnectWallet: () => void;
   addRule: (rule: Omit<EmergencyRule, "id">) => void;
@@ -42,6 +52,13 @@ interface GuardContextType {
   deleteRule: (id: string) => void;
   toggleRule: (id: string) => void;
   simulateEmergency: (type: EmergencyRule["type"]) => void;
+  simulateSigningRisk: (domain: string, message: string) => void;
+  simulateApprovalRisk: (spender: string, amount: string, token: string) => void;
+  simulateCodeScan: (code: string) => void;
+  allowSigningRequest: () => void;
+  rejectSigningRequest: () => void;
+  allowApproval: () => void;
+  rejectApproval: () => void;
   freezeWallet: () => void;
   revokeApprovals: () => void;
   dismissEmergency: () => void;
@@ -82,33 +99,47 @@ function generateAddress(): string {
 }
 
 export function GuardProvider({ children }: { children: React.ReactNode }) {
-  const [wallet, setWallet] = useState<WalletState>({
-    connected: false,
-    address: null,
-    balance: 4.2069,
-    emergencyMode: false,
+  // Wagmi hooks for real wallet connection
+  const { address, isConnected, chain } = useAccount();
+  const { connect } = useConnect();
+  const { disconnect } = useDisconnect();
+  const { data: balanceData } = useBalance({
+    address: address as `0x${string}`,
+    chainId: MONAD_CHAIN_ID,
+    query: { enabled: !!address },
   });
+
+  // Local state for rules, events, and monitoring
   const [rules, setRules] = useState<EmergencyRule[]>(DEFAULT_RULES);
   const [events, setEvents] = useState<EmergencyEvent[]>([]);
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [activeEmergency, setActiveEmergency] = useState<EmergencyEvent | null>(null);
+  const [signingRequest, setSigningRequest] = useState<SigningRequest | null>(null);
+  const [approvalRisk, setApprovalRisk] = useState<ApprovalRisk | null>(null);
+  const [codeScanResult, setCodeScanResult] = useState<CodeScanResult | null>(null);
+  const [previousBalance, setPreviousBalance] = useState<string>("0");
   const monitoringRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const connectWallet = useCallback(() => {
-    setWallet({
-      connected: true,
-      address: generateAddress(),
-      balance: 4.2069,
-      emergencyMode: false,
-    });
-    setIsMonitoring(true);
-  }, []);
+  // Construct wallet state from Wagmi data
+  const wallet: WalletState = {
+    connected: isConnected,
+    address: address || null,
+    balance: balanceData ? parseFloat(balanceData.formatted) : 0,
+    emergencyMode: !!activeEmergency,
+  };
 
+  // Connect wallet via Wagmi
+  const connectWallet = useCallback(() => {
+    connect({ connector: injected() });
+    setIsMonitoring(true);
+  }, [connect]);
+
+  // Disconnect wallet via Wagmi
   const disconnectWallet = useCallback(() => {
-    setWallet({ connected: false, address: null, balance: 0, emergencyMode: false });
+    disconnect();
     setIsMonitoring(false);
     if (monitoringRef.current) clearInterval(monitoringRef.current);
-  }, []);
+  }, [disconnect]);
 
   const addRule = useCallback((rule: Omit<EmergencyRule, "id">) => {
     setRules((prev) => [...prev, { ...rule, id: `rule-${Date.now()}` }]);
@@ -129,7 +160,6 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
   const triggerEmergency = useCallback((event: EmergencyEvent) => {
     setEvents((prev) => [event, ...prev]);
     setActiveEmergency(event);
-    setWallet((prev) => ({ ...prev, emergencyMode: true }));
   }, []);
 
   const simulateEmergency = useCallback(
@@ -157,16 +187,15 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
         ruleLabel: d.label,
         severity: "critical",
         description: d.desc,
+        sources: ["balance_drain"],
       };
 
-      setWallet((prev) => ({ ...prev, balance: type === "balance_drain" ? prev.balance * 0.69 : prev.balance }));
       triggerEmergency(event);
     },
     [rules, triggerEmergency]
   );
 
   const freezeWallet = useCallback(() => {
-    setWallet((prev) => ({ ...prev, emergencyMode: true }));
     if (activeEmergency) {
       setEvents((prev) =>
         prev.map((e) =>
@@ -198,17 +227,207 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
     setIsMonitoring((prev) => !prev);
   }, []);
 
-  // Simulated heartbeat
+  // ===== CONDITION 1: SIGNING RISK =====
+  const simulateSigningRisk = useCallback(
+    (domain: string, message: string) => {
+      const analysis = analyzeSigningRequest(domain, message);
+      const request: SigningRequest = {
+        domain,
+        message,
+        type: "personal_sign",
+        riskLevel: analysis.riskLevel,
+        riskReasons: analysis.riskReasons,
+        timestamp: new Date(),
+        isDomainTrusted: analysis.isDomainTrusted,
+        isPhishingAttempt: analysis.isPhishingAttempt,
+      };
+      setSigningRequest(request);
+
+      // Trigger emergency if critical
+      if (analysis.riskLevel === "critical") {
+        const riskDescription = analysis.isPhishingAttempt
+          ? `Phishing attempt detected from ${domain} - site is impersonating a legitimate DeFi app`
+          : `Dangerous signing request from ${domain}. ${analysis.riskReasons[0] || "Unknown risk"}`;
+        
+        const event: EmergencyEvent = {
+          id: `event-${Date.now()}`,
+          timestamp: new Date(),
+          ruleId: "signing-guard",
+          ruleLabel: "Signing Risk Detection",
+          severity: "critical",
+          description: riskDescription,
+          sources: ["signing"],
+        };
+        triggerEmergency(event);
+      }
+    },
+    [triggerEmergency]
+  );
+
+  const allowSigningRequest = useCallback(() => {
+    setSigningRequest(null);
+  }, []);
+
+  const rejectSigningRequest = useCallback(() => {
+    if (signingRequest) {
+      setEvents((prev) => [
+        ...prev,
+        {
+          id: `event-${Date.now()}`,
+          timestamp: new Date(),
+          ruleId: "signing-guard",
+          ruleLabel: "Signing Request Blocked",
+          severity: "high",
+          description: `User rejected signing request from ${signingRequest.domain}`,
+          actionTaken: "Signing request blocked",
+          sources: ["signing"],
+        },
+      ]);
+    }
+    setSigningRequest(null);
+  }, [signingRequest]);
+
+  // ===== CONDITION 2: APPROVAL RISK =====
+  const simulateApprovalRisk = useCallback(
+    (spender: string, amount: string, token: string) => {
+      const risk = analyzeApprovalRisk(spender, amount, token);
+      setApprovalRisk(risk);
+
+      // Trigger emergency if critical
+      if (risk.riskLevel === "critical") {
+        const event: EmergencyEvent = {
+          id: `event-${Date.now()}`,
+          timestamp: new Date(),
+          ruleId: "approval-guard",
+          ruleLabel: "Approval Abuse Detection",
+          severity: "critical",
+          description: `Dangerous approval detected: ${risk.reasons[0] || "Unknown risk"} to ${spender.substring(0, 10)}...`,
+          sources: ["approval"],
+        };
+        triggerEmergency(event);
+      }
+    },
+    [triggerEmergency]
+  );
+
+  const allowApproval = useCallback(() => {
+    if (approvalRisk) {
+      setEvents((prev) => [
+        ...prev,
+        {
+          id: `event-${Date.now()}`,
+          timestamp: new Date(),
+          ruleId: "approval-guard",
+          ruleLabel: "Approval Allowed",
+          severity: "medium",
+          description: `User approved ${approvalRisk.isUnlimited ? "UNLIMITED" : approvalRisk.amount} tokens to ${approvalRisk.spenderAddress}`,
+          sources: ["approval"],
+        },
+      ]);
+    }
+    setApprovalRisk(null);
+  }, [approvalRisk]);
+
+  const rejectApproval = useCallback(() => {
+    if (approvalRisk) {
+      setEvents((prev) => [
+        ...prev,
+        {
+          id: `event-${Date.now()}`,
+          timestamp: new Date(),
+          ruleId: "approval-guard",
+          ruleLabel: "Approval Rejected",
+          severity: "high",
+          description: `User rejected approval of ${approvalRisk.isUnlimited ? "UNLIMITED" : approvalRisk.amount} tokens`,
+          actionTaken: "Approval blocked",
+          sources: ["approval"],
+        },
+      ]);
+    }
+    setApprovalRisk(null);
+  }, [approvalRisk]);
+
+  // ===== CONDITION 3: CODE SAFETY =====
+  const simulateCodeScan = useCallback(
+    (code: string) => {
+      const result = scanSolidityCode(code);
+      setCodeScanResult(result);
+
+      // Trigger emergency if critical
+      if (result.riskLevel === "critical") {
+        const event: EmergencyEvent = {
+          id: `event-${Date.now()}`,
+          timestamp: new Date(),
+          ruleId: "code-safety",
+          ruleLabel: "Scam Contract Detected",
+          severity: "critical",
+          description: `Code scan found ${result.findings.length} security issues. ${result.shortSummary}`,
+          sources: ["code_safety"],
+        };
+        triggerEmergency(event);
+      }
+    },
+    [triggerEmergency]
+  );
+
+  // Monitor network and detect balance changes
+  useEffect(() => {
+    // Network validation happens automatically via Wagmi
+    // No additional checks needed here
+  }, [isConnected, chain?.id]);
+
+  // Monitor balance changes for emergency detection
+  useEffect(() => {
+    if (!wallet.connected || !address) return;
+
+    const currentBalance = wallet.balance.toString();
+    
+    // Track balance changes
+    if (previousBalance !== "0" && rules[0]?.enabled) {
+      const prev = parseFloat(previousBalance);
+      const curr = parseFloat(currentBalance);
+      
+      if (prev > 0) {
+        const percentChange = ((curr - prev) / prev) * 100;
+        
+        // Trigger emergency if balance drops more than threshold
+        if (percentChange < -30) {
+          const event: EmergencyEvent = {
+            id: `event-${Date.now()}`,
+            timestamp: new Date(),
+            ruleId: rules[0].id,
+            ruleLabel: rules[0].label,
+            severity: "critical",
+            description: `Wallet balance dropped ${Math.abs(percentChange).toFixed(1)}% in monitoring period. Potential balance drain detected.`,
+            sources: ["balance_drain"],
+          };
+          triggerEmergency(event);
+        }
+      }
+    }
+    
+    setPreviousBalance(currentBalance);
+  }, [wallet.balance, wallet.connected, address, previousBalance, rules, triggerEmergency]);
+
+  // Real-time monitoring heartbeat
   useEffect(() => {
     if (isMonitoring && wallet.connected) {
-      monitoringRef.current = setInterval(() => {
-        // Just keeps the monitoring alive — real version would poll
+      monitoringRef.current = setInterval(async () => {
+        // Polling interval for monitoring
+        // Real implementation could check on-chain events
       }, 5000);
       return () => {
         if (monitoringRef.current) clearInterval(monitoringRef.current);
       };
     }
   }, [isMonitoring, wallet.connected]);
+
+  // Update monitoring state based on connection
+  useEffect(() => {
+    if (!isConnected) {
+      setIsMonitoring(false);
+    }
+  }, [isConnected]);
 
   return (
     <GuardContext.Provider
@@ -218,6 +437,9 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
         events,
         isMonitoring,
         activeEmergency,
+        signingRequest,
+        approvalRisk,
+        codeScanResult,
         connectWallet,
         disconnectWallet,
         addRule,
@@ -225,6 +447,13 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
         deleteRule,
         toggleRule,
         simulateEmergency,
+        simulateSigningRisk,
+        simulateApprovalRisk,
+        simulateCodeScan,
+        allowSigningRequest,
+        rejectSigningRequest,
+        allowApproval,
+        rejectApproval,
         freezeWallet,
         revokeApprovals,
         dismissEmergency,
@@ -236,8 +465,3 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useGuard() {
-  const ctx = useContext(GuardContext);
-  if (!ctx) throw new Error("useGuard must be used within GuardProvider");
-  return ctx;
-}

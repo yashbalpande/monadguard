@@ -4,26 +4,26 @@ import { AlertTriangle, Clock, Eye } from "lucide-react";
 const problems = [
   {
     icon: AlertTriangle,
-    title: "Wallet Drains",
-    desc: "Malicious contracts silently drain your funds. By the time you notice, it's too late.",
+    title: "Fund Drains",
+    desc: "Attackers can move your funds without permission. Once it's gone, recovery is difficult.",
   },
   {
     icon: Eye,
-    title: "Approval Exploits",
-    desc: "Unlimited ERC-20 approvals are weaponized. One compromised protocol means total loss.",
+    title: "Approval Risks",
+    desc: "Unlimited token approvals can be abused. One compromised protocol puts all your funds at risk.",
   },
   {
     icon: Clock,
-    title: "Delayed Reactions",
-    desc: "Manual monitoring fails. Human reaction time can't compete with automated attacks.",
+    title: "Speed Matters",
+    desc: "Manual monitoring fails. By the time you notice something's wrong, the damage is done.",
   },
 ];
 
 export default function ProblemSection() {
   return (
-    <section id="problem" className="section-snap bg-gradient-dark relative">
+    <section id="problem" className="min-h-screen w-full flex flex-col items-center justify-center relative py-20 px-6 bg-gradient-dark">
       <div className="absolute inset-0 bg-gradient-emergency opacity-20" />
-      <div className="relative z-10 max-w-5xl mx-auto px-6 w-full">
+      <div className="relative z-10 max-w-5xl mx-auto w-full">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -33,7 +33,8 @@ export default function ProblemSection() {
         >
           <p className="text-sm font-mono tracking-[0.3em] uppercase text-emergency/70 mb-4">The Problem</p>
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
-            Your wallet is <span className="text-gradient-emergency">unprotected.</span>
+            You need protection{" "}
+            <span className="text-gradient-emergency">from transaction risks.</span>
           </h2>
         </motion.div>
 

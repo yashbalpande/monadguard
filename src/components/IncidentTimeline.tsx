@@ -29,8 +29,8 @@ export default function IncidentTimeline() {
             className="text-center py-16"
           >
             <Shield className="w-12 h-12 text-primary/30 mx-auto mb-4" />
-            <p className="text-muted-foreground">No incidents yet. Your wallet is safe.</p>
-            <p className="text-xs text-muted-foreground/60 mt-2 font-mono">Simulate an emergency to see the timeline</p>
+            <p className="text-muted-foreground">No activity yet.</p>
+            <p className="text-xs text-muted-foreground/60 mt-2 font-mono">Activity will appear here when you test the system</p>
           </motion.div>
         ) : (
           <div className="space-y-4">

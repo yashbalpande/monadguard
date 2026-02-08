@@ -2,16 +2,16 @@ import { motion } from "framer-motion";
 import { Shield, Zap, Bell } from "lucide-react";
 
 const steps = [
-  { icon: Shield, title: "Set Rules", desc: "Define what emergencies look like for your wallet." },
-  { icon: Zap, title: "Real-Time Watch", desc: "We monitor every block, every transfer, every approval." },
-  { icon: Bell, title: "Instant Action", desc: "Alert fires. One click freezes your wallet. Damage stopped." },
+  { icon: Shield, title: "Set Rules", desc: "Define what you want to monitor in your wallet." },
+  { icon: Zap, title: "Continuous Watch", desc: "The system checks your activity on every block." },
+  { icon: Bell, title: "Quick Action", desc: "Get an alert when something looks off. You stop it before it's too late." },
 ];
 
 export default function SolutionSection() {
   return (
-    <section className="section-snap bg-gradient-dark grid-bg relative">
+    <section className="min-h-screen w-full flex flex-col items-center justify-center relative py-20 px-6 bg-gradient-dark grid-bg\">
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyber/30 to-transparent" />
-      <div className="relative z-10 max-w-5xl mx-auto px-6 w-full">
+      <div className="relative z-10 max-w-5xl mx-auto w-full\">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -21,7 +21,8 @@ export default function SolutionSection() {
         >
           <p className="text-sm font-mono tracking-[0.3em] uppercase text-primary/70 mb-4">The Solution</p>
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
-            Emergency Guard watches <span className="text-gradient-cyber">24/7.</span>
+            Three steps to{" "}
+            <span className="text-gradient-cyber">protect yourself.</span>
           </h2>
         </motion.div>
 

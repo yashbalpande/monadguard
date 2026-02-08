@@ -16,8 +16,8 @@ export default function MonitoringDashboard() {
   const activeRules = rules.filter((r) => r.enabled).length;
 
   return (
-    <section className="section-snap bg-gradient-dark grid-bg relative">
-      <div className="relative z-10 max-w-4xl mx-auto px-6 w-full">
+    <section className="min-h-screen w-full flex flex-col items-center justify-center relative py-20 px-6 bg-gradient-dark">
+      <div className="relative z-10 max-w-4xl mx-auto w-full">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -90,8 +90,8 @@ export default function MonitoringDashboard() {
           >
             <AlertTriangle className="w-6 h-6 text-emergency" />
             <div>
-              <p className="font-semibold text-emergency">Emergency Mode Active</p>
-              <p className="text-xs text-emergency/70">Only safe actions allowed. Risky transactions blocked.</p>
+              <p className="font-semibold text-emergency">Wallet Restricted</p>
+              <p className="text-xs text-emergency/70">Your account is temporarily restricted while we review activity.</p>
             </div>
           </motion.div>
         )}
@@ -104,12 +104,12 @@ export default function MonitoringDashboard() {
             viewport={{ once: true }}
             className="border border-dashed border-warning/30 rounded-xl p-6"
           >
-            <p className="text-xs font-mono text-warning/70 uppercase tracking-widest mb-4">⚡ Simulation Mode</p>
+            <p className="text-xs font-mono text-warning/70 uppercase tracking-widest mb-4">Test Scenarios</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
-                { type: "balance_drain" as const, icon: TrendingDown, label: "Simulate Drain" },
-                { type: "approval_abuse" as const, icon: Shield, label: "Simulate Exploit" },
-                { type: "price_crash" as const, icon: Zap, label: "Simulate Crash" },
+                { type: "balance_drain" as const, icon: TrendingDown, label: "Test Fund Drain" },
+                { type: "approval_abuse" as const, icon: Shield, label: "Test Approval Risk" },
+                { type: "price_crash" as const, icon: Zap, label: "Test Market Drop" },
               ].map((sim) => (
                 <button
                   key={sim.type}

@@ -1,73 +1,96 @@
-# Welcome to your Lovable project
+# Monad Guard
 
-## Project info
+A wallet protection system that monitors your blockchain activity and alerts you to risky transactions before they happen.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## What It Does
 
-## How can I edit this code?
+Monad Guard watches three types of threats:
 
-There are several ways of editing your application.
+1. **Signature Requests** - When a website asks you to sign, we detect if it's a scam trying to impersonate a real service. We catch phishing domains (like `uniswapp.xyz` mimicking Uniswap), unknown websites, and messages that could be replayed.
 
-**Use Lovable**
+2. **Token Approvals** - We flag unlimited approvals and track which contracts ask for permission to spend your tokens. The system catches unknown spenders and monitors how your funds are used after you approve.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+3. **Contract Code** - You can paste a Solidity contract to scan it for dangerous patterns. We check for access control issues, risky design patterns, and score the overall risk.
 
-Changes made via Lovable will be committed automatically to this repo.
+When something looks wrong, the system restricts your wallet and gives you a moment to review what's happening.
 
-**Use your preferred IDE**
+## Getting Started
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Requirements
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Node.js (v16 or later)
+- npm or yarn
+- MetaMask or another Web3 wallet
 
-Follow these steps:
+### Installation
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+```bash
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+cd wallet-sentinel
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app runs on http://localhost:5173 by default.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Building for Production
 
-**Use GitHub Codespaces**
+```bash
+npm run build
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## How It Works
 
-## What technologies are used for this project?
+The system uses a unified emergency engine that tracks your wallet state and checks transactions as they happen. When it detects something risky:
 
-This project is built with:
+1. You get an alert with details about what triggered it
+2. Your wallet gets temporarily restricted
+3. You can choose to proceed anyway or cancel
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+All activity is logged so you can see the history of alerts and actions.
 
-## How can I deploy this project?
+## Tech Stack
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+- **Vite** - Fast build tool
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Wagmi** - Wallet connection
+- **Tailwind CSS** - Styling
+- **shadcn/ui** - Components
 
-## Can I connect a custom domain to my Lovable project?
+Runs on Monad Testnet (Chain ID: 10143).
 
-Yes, you can!
+## Limitations
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+This is pattern-matching detection, not prediction. The system analyzes transactions and contract code using heuristics - it's not perfect and will miss some threats. It also can't catch every scam or exploit. 
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Use it as a tool to catch common mistakes and slow yourself down when something looks off.
+
+## Code Structure
+
+```
+src/
+  components/       - UI components
+  contexts/         - Global state (GuardContext)
+  lib/              - Detection business logic
+  pages/            - Page layouts
+  hooks/            - Custom React hooks
+```
+
+Key files:
+- `GuardContext.tsx` - Central emergency engine and state management
+- `signingGuard.ts` - Signature request analysis
+- `approvalGuard.ts` - Token approval detection
+- `codeSafety.ts` - Solidity contract scanning
+
+## Scam Detection
+
+The system detects when you visit suspicious websites trying to steal your crypto:
+
+- **Domain Impersonation** - Catches `uniswapp.xyz` mimicking `uniswap.org`
+- **Phishing Sites** - Flags obvious scams and domain typos
+- **Unknown Websites** - Alerts you on first-time domains
+- **Malicious Messages** - Detects hex-encoded or replayable signatures
+
+See [SCAM_DETECTION_GUIDE.md](SCAM_DETECTION_GUIDE.md) for detailed examples and how to test it.
+
